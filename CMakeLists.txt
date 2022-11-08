@@ -14,7 +14,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 
-find_package(OpenCV 4.2.0 REQUIRED core aruco highgui imgproc)
+find_package(OpenCV 4.2.0 REQUIRED core aruco highgui imgproc videoio)
 
 add_library(aruco_localization src/ArucoLocalization.cpp)
 

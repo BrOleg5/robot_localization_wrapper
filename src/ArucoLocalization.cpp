@@ -199,7 +199,61 @@ void ArucoLocalization::setMarkerDictionary(cv::aruco::PREDEFINED_DICTIONARY_NAM
 	dictionary = cv::aruco::getPredefinedDictionary(dict_name);
 }
 
+void ArucoLocalization::setMarkerDictionary(int dict_id) {
+	dictionary = cv::aruco::getPredefinedDictionary(dict_id);
+}
+
 void ArucoLocalization::setFrameSize(int frame_width, int frame_height) {
 	this->frame_width = frame_width;
 	this->frame_height = frame_height;
+}
+
+std::string getDictionaryName(int dict_id) {
+	switch (dict_id) {
+	case cv::aruco::DICT_4X4_50:
+		return std::string("DICT_4X4_50");
+	case cv::aruco::DICT_4X4_100:
+		return std::string("DICT_4X4_100");
+	case cv::aruco::DICT_4X4_250:
+		return std::string("DICT_4X4_250");
+	case cv::aruco::DICT_4X4_1000:
+		return std::string("DICT_4X4_1000");
+	case cv::aruco::DICT_5X5_50:
+		return std::string("DICT_5X5_50");
+	case cv::aruco::DICT_5X5_100:
+		return std::string("DICT_5X5_100");
+	case cv::aruco::DICT_5X5_250:
+		return std::string("DICT_5X5_250");
+	case cv::aruco::DICT_5X5_1000:
+		return std::string("DICT_5X5_1000");
+	case cv::aruco::DICT_6X6_50:
+		return std::string("DICT_6X6_50");
+	case cv::aruco::DICT_6X6_100:
+		return std::string("DICT_6X6_100");
+	case cv::aruco::DICT_6X6_250:
+		return std::string("DICT_6X6_250");
+	case cv::aruco::DICT_6X6_1000:
+		return std::string("DICT_6X6_1000");
+	case cv::aruco::DICT_7X7_50:
+		return std::string("DICT_7X7_50");
+	case cv::aruco::DICT_7X7_100:
+		return std::string("DICT_7X7_100");
+	case cv::aruco::DICT_7X7_250:
+		return std::string("DICT_7X7_250");
+	case cv::aruco::DICT_7X7_1000:
+		return std::string("DICT_7X7_1000");
+	case cv::aruco::DICT_ARUCO_ORIGINAL:
+		return std::string("DICT_ARUCO_ORIGINAL");
+	case cv::aruco::DICT_APRILTAG_16h5:
+		return std::string("DICT_APRILTAG_16h5");
+	case cv::aruco::DICT_APRILTAG_25h9:
+		return std::string("DICT_APRILTAG_25h9");
+	case cv::aruco::DICT_APRILTAG_36h10:
+		return std::string("DICT_APRILTAG_36h10");
+	case cv::aruco::DICT_APRILTAG_36h11:
+		return std::string("DICT_APRILTAG_36h11");
+
+	default:
+		return std::string("Undefined dictionary");
+	}
 }

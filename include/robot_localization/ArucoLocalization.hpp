@@ -8,6 +8,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cmath>
+#include <string>
 
 #include "opencv2/aruco.hpp"
 #include "opencv2/highgui.hpp"
@@ -184,7 +185,10 @@ class ArucoLocalization {
 	void getMarkersIndexes(std::vector<int>& marker_ids);
 
 	void setMarkerDictionary(cv::aruco::PREDEFINED_DICTIONARY_NAME dict_name);
+	void setMarkerDictionary(int dict_id);
 	void setFrameSize(int frame_width, int frame_height);
 };
+
+std::string getDictionaryName(int dict_id);
 
 #endif
