@@ -1,5 +1,42 @@
 #include "robot_localization/CameraLocalizationNode.hpp"
 
+void CameraLocalizationNode::declare_node_parameters() {
+    rcl_interfaces::msg::ParameterDescriptor sample_period_desc{};
+    sample_period_desc.description = "Sample period of localization. Sample period in ms.";
+    this->declare_parameter<long long>("sample_period", 40, sample_period_desc);
+    
+    rcl_interfaces::msg::ParameterDescriptor dict_id_desc{};
+    dict_id_desc.description = "Marker dictionary id: DICT_4X4_50=0, DICT_4X4_100=1, DICT_4X4_250=2,"
+                                "DICT_4X4_1000=3, DICT_5X5_50=4, DICT_5X5_100=5, DICT_5X5_250=6, DICT_5X5_1000=7, "
+                                "DICT_6X6_50=8, DICT_6X6_100=9, DICT_6X6_250=10, DICT_6X6_1000=11, DICT_7X7_50=12,"
+                                "DICT_7X7_100=13, DICT_7X7_250=14, DICT_7X7_1000=15, DICT_ARUCO_ORIGINAL = 16,"
+                                "DICT_APRILTAG_16h5=17, DICT_APRILTAG_25h9=18, DICT_APRILTAG_36h10=19, DICT_APRILTAG_36h11=20";
+    this->declare_parameter<long long>("dict_id", 0, dict_id_desc);
+    rcl_interfaces::msg::ParameterDescriptor marker_id_desc{};
+    marker_id_desc.description = "Marker id.";
+    this->declare_parameter<long long>("marker_id", 0, marker_id_desc);
+
+    rcl_interfaces::msg::ParameterDescriptor cam_id_desc{};
+    cam_id_desc.description = "Camera id.";
+    this->declare_parameter<long long>("cam_id", 0, cam_id_desc);
+    rcl_interfaces::msg::ParameterDescriptor cam_width_desc{};
+    cam_width_desc.description = "Width of camera frame in pixels.";
+    this->declare_parameter<long long>("cam_width", 1920, cam_width_desc);
+    rcl_interfaces::msg::ParameterDescriptor cam_height_desc{};
+    cam_height_desc.description = "Height of camera frame in pixels.";
+    this->declare_parameter<long long>("cam_height", 1080, cam_height_desc);
+    rcl_interfaces::msg::ParameterDescriptor cam_focus_desc{};
+    cam_focus_desc.description = "Camera focus.";
+    cam_focus_desc.additional_constraints = "From 0 to 255 with step 5";
+    this->declare_parameter<long long>("cam_focus", 0, cam_focus_desc);
+    rcl_interfaces::msg::ParameterDescriptor cam_exposure_desc{};
+    cam_exposure_desc.description = "Camera exposure.";
+    this->declare_parameter<double>("cam_exposure", -7.5, cam_exposure_desc);
+    rcl_interfaces::msg::ParameterDescriptor cam_param_file_desc{};
+    cam_param_file_desc.description = "JSON file with camera parameters.";
+    this->declare_parameter<std::string>("cam_param_file", "camera_params.json", cam_param_file_desc);
+}
+
 void CameraLocalizationNode::video_capture_init() {
     int cam_id = static_cast<int>(this->get_parameter("cam_id").get_parameter_value().get<long long>());
     RCLCPP_INFO(this->get_logger(), "Camera id: %d", cam_id);

@@ -20,15 +20,7 @@ using namespace std::chrono;
 class CameraLocalizationNode : public rclcpp::Node {
     public:
         CameraLocalizationNode(): Node("camera_loc") {
-            this->declare_parameter<long long>("sample_period", 40);
-            this->declare_parameter<long long>("dict_id", 0);
-            this->declare_parameter<long long>("cam_id", 0);
-            this->declare_parameter<long long>("cam_width", 1920);
-            this->declare_parameter<long long>("cam_height", 1080);
-            this->declare_parameter<long long>("cam_focus", 0);
-            this->declare_parameter<double>("cam_exposure", -7.5);
-            this->declare_parameter<long long>("marker_id", 0);
-            this->declare_parameter<std::string>("cam_param", "camera_params.json");
+            declare_node_parameters();
 
             std::string node_name = this->get_name();
             position_publisher_ = this->create_publisher<geometry_msgs::msg::Twist>(node_name + "/pos", 10);
@@ -40,7 +32,7 @@ class CameraLocalizationNode : public rclcpp::Node {
 
             marker_id = static_cast<int>(this->get_parameter("marker_id").get_parameter_value().get<long long>());
             cv::Point2f pixelResolution;
-            std::string cam_param_file = this->get_parameter("cam_param").get_parameter_value().get<std::string>();
+            std::string cam_param_file = this->get_parameter("cam_param_file").get_parameter_value().get<std::string>();
             RCLCPP_INFO(this->get_logger(), "File camera parameters: %s", cam_param_file);
             if (!readCameraParameters(cam_param_file, pixelResolution)) {
                 RCLCPP_ERROR(this->get_logger(), "Read camera parameters error.");
@@ -67,6 +59,7 @@ class CameraLocalizationNode : public rclcpp::Node {
         }
 
     private:
+        void declare_node_parameters();
         void timer_callback();
         void video_capture_init();
 
