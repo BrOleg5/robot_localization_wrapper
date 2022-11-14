@@ -1,18 +1,17 @@
-#ifndef ARUCOLOCALIZATION_LIB
-#define ARUCOLOCALIZATION_LIB
+#ifndef ARUCOLOCALIZATION_HPP
+#	define ARUCOLOCALIZATION_HPP
 
 #ifndef PI
 #	define PI 3.14159265358979323846f
 #endif
 
 #include <iostream>
-#include <algorithm>
-#include <cmath>
-#include <string>
-
+#include "opencv2/core.hpp"
 #include "opencv2/aruco.hpp"
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgproc.hpp"
+#include <algorithm>
+#include <cmath>
 
 namespace td {
 
@@ -108,83 +107,40 @@ namespace td {
 	float rad2deg(float rad);
 }
 
-/**
- * @class ArucoLocalization
- * @brief Implementation robot localization by aruco marker.
- */
 class ArucoLocalization {
+private:
 	/**
 	 * Corners of aruco marker cartesian clockwise.
 	 */
 	cv::Point2f arucoCorner[4];
 
-	/**
-	 * Frame size
-	*/
 	int frame_height;
 	int frame_width;
 
-	/**
-	 * Vector for aruco markers' indexes.
-	 */
 	std::vector<int> markerIds;
+	std::vector<std::vector<cv::Point2f>> markerCorners;
 
-	/**
-	 * Matrix for aruco markers' actual and rejected corners.
-	 */
-	std::vector<std::vector<cv::Point2f>> markerCorners, rejectedCandidates;
-
-	/**
-	 * Creating the parameters for the aruco detection.
-	 */
 	cv::Ptr<cv::aruco::DetectorParameters> detectorParameters;
-	
-	/**
-	 * Selecting the dictionary to use.
-	 */
 	cv::Ptr<cv::aruco::Dictionary> dictionary;
 
-	public:
-
-	enum Status {
-		NOT_MARKER_INDEX = -1,
-		OK,
-		END_OF_VIDEO_FILE,
-		MARKER_NOT_DETECTED
-	};
-
-
+public:
 	ArucoLocalization();
-	/**
-	 * Constructor.
-	 * 
-	 * @param dict_name name of aruco marker dictonary.
-	 */
 	ArucoLocalization(cv::aruco::PREDEFINED_DICTIONARY_NAME dict_name);
-	
+
 	~ArucoLocalization() {}
 
-	/**
-	 * Localize marker.
-	 */
-	int detectMarkers(const cv::Mat& frame);
+	bool detectMarkers(const cv::Mat& frame);
 
 	int filterMarkers(int markerID);
 
-	/**
-	 * Calculate marker positions on the plane.
-	 * 
-	 * @param data storage marker's global coordinates and local coordinate change.
-	 * @param markerID ID of marker that position calculating
-	 */
 	bool estimatePosition(td::TransferData* data, int markerID = -1);
 
-	cv::Mat draw_marker(const cv::Mat& frame, int markerID = -1);
+	bool draw_marker(cv::InputOutputArray frame, int markerID = -1);
 
 	void getMarkersCorners(std::vector<std::vector<cv::Point2f>>& marker_corners);
 	void getMarkersIndexes(std::vector<int>& marker_ids);
 
-	void setMarkerDictionary(cv::aruco::PREDEFINED_DICTIONARY_NAME dict_name);
+	void setMarkerDictonary(cv::aruco::PREDEFINED_DICTIONARY_NAME dict_name);
 	void setMarkerDictionary(int dict_id);
 	void setFrameSize(int frame_width, int frame_height);
 };

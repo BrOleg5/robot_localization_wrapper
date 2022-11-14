@@ -1,4 +1,4 @@
-#include "robot_localization/ArucoLocalization.hpp"
+#include "robot_localization/ArucolocaLization.hpp"
 
 void td::TransferData::Angle(cv::Point2f* arucoCorner) {
 	float angle[4] = { 0.0f };
@@ -105,27 +105,18 @@ ArucoLocalization::ArucoLocalization() {
 }
 
 ArucoLocalization::ArucoLocalization(cv::aruco::PREDEFINED_DICTIONARY_NAME dict_name) {
-	for (int i = 0; i < 3; i++) {
-		arucoCorner[i].x = 0;
-		arucoCorner[i].y = 0;
-	}
-	detectorParameters = cv::aruco::DetectorParameters::create();
+	ArucoLocalization();
 	dictionary = cv::aruco::getPredefinedDictionary(dict_name);
 }
 
-int ArucoLocalization::detectMarkers(const cv::Mat& frame) {
-	if(frame.empty()) {
-		std::cout << "End of video file.\n";
-		return Status::END_OF_VIDEO_FILE;
-	}
+bool ArucoLocalization::detectMarkers(const cv::Mat& frame) {
 	markerIds.clear();
-	cv::aruco::detectMarkers(frame, dictionary, markerCorners, markerIds, detectorParameters, rejectedCandidates);
+	cv::aruco::detectMarkers(frame, dictionary, markerCorners, markerIds, detectorParameters);
 	if (!markerCorners.empty() && !markerIds.empty()) {
-		return Status::OK;
+		return true;
 	}
 	else {
-		std::cerr << "Markers are not detected.\n";
-		return Status::MARKER_NOT_DETECTED;
+		return false;
 	}
 }
 
@@ -135,7 +126,7 @@ int ArucoLocalization::filterMarkers(int markerID) {
 		return *markerIterator;
 	}
 	else {
-		return Status::NOT_MARKER_INDEX;
+		return -1;
 	}
 }
 
@@ -143,7 +134,7 @@ bool ArucoLocalization::estimatePosition(td::TransferData* data, int markerID) {
 	int markerIndex = 0;
 	if(markerID >= 0) {
 		markerIndex = filterMarkers(markerID);
-		if(markerIndex == Status::NOT_MARKER_INDEX) {
+		if(markerIndex < 0) {
 			return false;
 		}
 	}
@@ -167,24 +158,22 @@ bool ArucoLocalization::estimatePosition(td::TransferData* data, int markerID) {
 	return true;
 }
 
-cv::Mat ArucoLocalization::draw_marker(const cv::Mat& frame, int markerID) {
-	cv::Mat outputImage;
-	frame.copyTo(outputImage);
+bool ArucoLocalization::draw_marker(cv::InputOutputArray frame, int markerID) {
 	if(markerID >= 0) {
 		int markerIndex = filterMarkers(markerID);
 		if(markerIndex >= 0) {
 			std::vector<std::vector<cv::Point2f>> oneMarkerCorner = {markerCorners[markerIndex]};
 			std::vector<int> oneMarkerIds = {markerIds[markerIndex]};
-			cv::aruco::drawDetectedMarkers(outputImage, oneMarkerCorner, oneMarkerIds);
+			cv::aruco::drawDetectedMarkers(frame, oneMarkerCorner, oneMarkerIds);
 		}
 		else {
-			std::cerr << "Marker with ID = " << markerID << " not searched.\n";
+			return false;
 		}
 	}
 	else {
-		cv::aruco::drawDetectedMarkers(outputImage, markerCorners, markerIds);
+		cv::aruco::drawDetectedMarkers(frame, markerCorners, markerIds);
 	}
-	return outputImage;
+	return true;
 }
 
 void ArucoLocalization::getMarkersCorners(std::vector<std::vector<cv::Point2f>>& marker_corners) {
@@ -195,7 +184,7 @@ void ArucoLocalization::getMarkersIndexes(std::vector<int>& marker_ids) {
 	marker_ids = markerIds;
 }
 
-void ArucoLocalization::setMarkerDictionary(cv::aruco::PREDEFINED_DICTIONARY_NAME dict_name) {
+void ArucoLocalization::setMarkerDictonary(cv::aruco::PREDEFINED_DICTIONARY_NAME dict_name) {
 	dictionary = cv::aruco::getPredefinedDictionary(dict_name);
 }
 

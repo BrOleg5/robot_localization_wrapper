@@ -19,7 +19,7 @@ find_package(OpenCV 4.2.0 REQUIRED core aruco highgui imgproc videoio)
 add_library(aruco_localization src/ArucoLocalization.cpp)
 
 set_target_properties(aruco_localization PROPERTIES
-                      VERSION 1.4.4
+                      VERSION 2.0.0
                       PUBLIC_HEADER "include/${PROJECT_NAME}/ArucoLocalization.hpp;include/${PROJECT_NAME}/ReadSaveCameraParameters.hpp"
                       DEBUG_POSTFIX d)
 

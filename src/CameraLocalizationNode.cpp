@@ -8,10 +8,10 @@ CameraLocalizationNode::CameraLocalizationNode(): Node("camera_loc") {
     change_position_publisher_ = this->create_publisher<geometry_msgs::msg::Twist>(node_name + "/change_pos", 10);
 
     int dictionary_id = static_cast<int>(this->get_parameter("dict_id").get_parameter_value().get<long long>());
+    cv_system.setMarkerDictionary(dictionary_id);
+    marker_id = static_cast<int>(this->get_parameter("marker_id").get_parameter_value().get<long long>());
 
     video_capture_init();
-
-    marker_id = static_cast<int>(this->get_parameter("marker_id").get_parameter_value().get<long long>());
     cv::Point2f pixelResolution;
     std::string cam_param_file = this->get_parameter("cam_param_file").get_parameter_value().get<std::string>();
     RCLCPP_INFO(this->get_logger(), "File camera parameters: %s", cam_param_file);
@@ -23,9 +23,7 @@ CameraLocalizationNode::CameraLocalizationNode(): Node("camera_loc") {
     if((pixelResolution.x <= 0) || (pixelResolution.y <= 0)) {
         RCLCPP_ERROR(this->get_logger(), "Get invalid camera parameters.");
     }
-
     transfer.pixelResolution = pixelResolution;
-    cv_system.setMarkerDictionary(dictionary_id);
 
     milliseconds sample_period = milliseconds(this->get_parameter("sample_period").get_parameter_value().get<long long>());
     timer_ = this->create_wall_timer(sample_period, std::bind(&CameraLocalizationNode::timer_callback, this));
@@ -119,9 +117,11 @@ void CameraLocalizationNode::video_capture_init() {
 
 void CameraLocalizationNode::timer_callback() {
     video_capture >> frame;
-    int status = cv_system.detectMarkers(frame);
-    switch (status) {
-    case ArucoLocalization::Status::OK:
+    if(frame.empty()) {
+        RCLCPP_ERROR(this->get_logger(), "Camera frame empty.");
+        return;
+    }
+    if(cv_system.detectMarkers(frame)) {
         if(cv_system.estimatePosition(&transfer, marker_id)) {
             geometry_msgs::msg::Twist msg;
             msg.linear.x = static_cast<double>(transfer.currGlobalCartesian.x);
@@ -137,13 +137,10 @@ void CameraLocalizationNode::timer_callback() {
             change_position_publisher_->publish(msg);
         }
         else {
-            RCLCPP_ERROR(this->get_logger(), "Marker estimate position failed.");
+            RCLCPP_ERROR(this->get_logger(), "Marker with ID %d is not found.", marker_id);
         }
-        break;
-    case ArucoLocalization::Status::MARKER_NOT_DETECTED:
+    }
+    else {
         RCLCPP_ERROR(this->get_logger(), "Marker detection failed.");
-
-    default:
-        break;
     }
 }
