@@ -4,8 +4,8 @@ CameraLocalizationNode::CameraLocalizationNode(): Node("camera_loc") {
     declare_node_parameters();
 
     std::string node_name = this->get_name();
-    position_publisher_ = this->create_publisher<geometry_msgs::msg::Twist>(node_name + "/pos", 10);
-    change_position_publisher_ = this->create_publisher<geometry_msgs::msg::Twist>(node_name + "/change_pos", 10);
+    position_publisher_ = this->create_publisher<geometry_msgs::msg::TwistStamped>(node_name + "/pos", 10);
+    change_position_publisher_ = this->create_publisher<geometry_msgs::msg::TwistStamped>(node_name + "/change_pos", 10);
 
     int dictionary_id = static_cast<int>(this->get_parameter("dict_id").get_parameter_value().get<long long>());
     cv_system.setMarkerDictionary(dictionary_id);
@@ -123,17 +123,18 @@ void CameraLocalizationNode::timer_callback() {
     }
     if(cv_system.detectMarkers(frame)) {
         if(cv_system.estimatePosition(&transfer, marker_id)) {
-            geometry_msgs::msg::Twist msg;
-            msg.linear.x = static_cast<double>(transfer.currGlobalCartesian.x);
-            msg.linear.y = static_cast<double>(transfer.currGlobalCartesian.y);
-            msg.linear.z = 0.0;
-            msg.angular.x = 0.0;
-            msg.angular.y = 0.0;
-            msg.angular.z = static_cast<double>(transfer.currAngle);
+            geometry_msgs::msg::TwistStamped msg;
+            msg.header.stamp = this->get_clock()->now();
+            msg.twist.linear.x = static_cast<double>(transfer.currGlobalCartesian.x);
+            msg.twist.linear.y = static_cast<double>(transfer.currGlobalCartesian.y);
+            msg.twist.linear.z = 0.0;
+            msg.twist.angular.x = 0.0;
+            msg.twist.angular.y = 0.0;
+            msg.twist.angular.z = static_cast<double>(transfer.currAngle);
             position_publisher_->publish(msg);
-            msg.linear.x = static_cast<double>(transfer.deltaEigenCartesian.x);
-            msg.linear.y = static_cast<double>(transfer.deltaEigenCartesian.y);
-            msg.angular.z = static_cast<double>(transfer.deltaAngle);
+            msg.twist.linear.x = static_cast<double>(transfer.deltaEigenCartesian.x);
+            msg.twist.linear.y = static_cast<double>(transfer.deltaEigenCartesian.y);
+            msg.twist.angular.z = static_cast<double>(transfer.deltaAngle);
             change_position_publisher_->publish(msg);
         }
         else {

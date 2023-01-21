@@ -8,7 +8,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/parameter.hpp"
-#include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
 
 #include "robot_localization/ArucoLocalization.hpp"
 #include "robot_localization/ReadSaveCameraParameters.hpp"
@@ -34,8 +34,8 @@ class CameraLocalizationNode : public rclcpp::Node {
         cv::Mat frame;
 
         rclcpp::TimerBase::SharedPtr timer_;
-        rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr position_publisher_;
-        rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr change_position_publisher_;
+        rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr position_publisher_;
+        rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr change_position_publisher_;
 };
 
 #endif
