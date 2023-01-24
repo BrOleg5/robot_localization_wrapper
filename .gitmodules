@@ -1,0 +1,3 @@
+[submodule "aruco_robot_localization"]
+	path = aruco_robot_localization
+	url = https://github.com/BrOleg5/aruco_robot_localization
