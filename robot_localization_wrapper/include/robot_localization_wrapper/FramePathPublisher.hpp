@@ -13,7 +13,7 @@
 #include "tf2_ros/transform_broadcaster.h"
 #include "nav_msgs/msg/path.hpp"
 
-#include "robot_localization/ArucoLocalization.hpp"
+#include "aruco_robot_localization/arucolocalization.hpp"
 
 class FramePathPublisher : public rclcpp::Node {
     public:

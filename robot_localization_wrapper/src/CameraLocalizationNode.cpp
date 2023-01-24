@@ -1,11 +1,17 @@
-#include "robot_localization/CameraLocalizationNode.hpp"
+#include "robot_localization_wrapper/CameraLocalizationNode.hpp"
 
 CameraLocalizationNode::CameraLocalizationNode(): Node("camera_loc") {
     declare_node_parameters();
 
+    tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+    transform.header.frame_id = "world";
+    transform.child_frame_id = "base_link";
+
     std::string node_name = this->get_name();
-    position_publisher_ = this->create_publisher<geometry_msgs::msg::TwistStamped>(node_name + "/pos", 10);
-    change_position_publisher_ = this->create_publisher<geometry_msgs::msg::TwistStamped>(node_name + "/change_pos", 10);
+    pose_publisher = this->create_publisher<geometry_msgs::msg::PoseStamped>("/" + node_name + "/pose", 10);
+    path_publisher = this->create_publisher<nav_msgs::msg::Path>("/" + node_name + "/path", 10);
+
+    path.header.frame_id = "world";
 
     int dictionary_id = static_cast<int>(this->get_parameter("dict_id").get_parameter_value().get<long long>());
     cv_system.setMarkerDictionary(dictionary_id);
@@ -26,7 +32,7 @@ CameraLocalizationNode::CameraLocalizationNode(): Node("camera_loc") {
     transfer.pixelResolution = pixelResolution;
 
     milliseconds sample_period = milliseconds(this->get_parameter("sample_period").get_parameter_value().get<long long>());
-    timer_ = this->create_wall_timer(sample_period, std::bind(&CameraLocalizationNode::timer_callback, this));
+    timer = this->create_wall_timer(sample_period, std::bind(&CameraLocalizationNode::timer_callback, this));
 
     RCLCPP_INFO(this->get_logger(), "Sample period: %d ms", sample_period.count());
     RCLCPP_INFO(this->get_logger(), "Dictionary: %s", getDictionaryName(dictionary_id));
@@ -123,19 +129,35 @@ void CameraLocalizationNode::timer_callback() {
     }
     if(cv_system.detectMarkers(frame)) {
         if(cv_system.estimatePosition(&transfer, marker_id)) {
-            geometry_msgs::msg::TwistStamped msg;
-            msg.header.stamp = this->get_clock()->now();
-            msg.twist.linear.x = static_cast<double>(transfer.currGlobalCartesian.x);
-            msg.twist.linear.y = static_cast<double>(transfer.currGlobalCartesian.y);
-            msg.twist.linear.z = 0.0;
-            msg.twist.angular.x = 0.0;
-            msg.twist.angular.y = 0.0;
-            msg.twist.angular.z = static_cast<double>(transfer.currAngle);
-            position_publisher_->publish(msg);
-            msg.twist.linear.x = static_cast<double>(transfer.deltaEigenCartesian.x);
-            msg.twist.linear.y = static_cast<double>(transfer.deltaEigenCartesian.y);
-            msg.twist.angular.z = static_cast<double>(transfer.deltaAngle);
-            change_position_publisher_->publish(msg);
+            geometry_msgs::msg::PoseStamped robot_pose;
+            robot_pose.header.stamp = this->get_clock()->now();
+            robot_pose.pose.position.x = static_cast<double>(transfer.currGlobalCartesian.y * 1.84 / 1000.0);
+            robot_pose.pose.position.y = static_cast<double>(transfer.currGlobalCartesian.x * 1.84 / 1000.0);
+            robot_pose.pose.position.z = 0.0;
+
+            q.setRPY(0.0f, 0.0f, td::deg2rad(transfer.currAngle - 180.f));
+            robot_pose.pose.orientation.x = q.x();
+            robot_pose.pose.orientation.y = q.y();
+            robot_pose.pose.orientation.z = q.z();
+            robot_pose.pose.orientation.w = q.w();
+            pose_publisher->publish(robot_pose);
+
+            transform.header.stamp = robot_pose.header.stamp;
+
+            transform.transform.translation.x = robot_pose.pose.position.x;
+            transform.transform.translation.y = robot_pose.pose.position.y;
+            transform.transform.translation.z = robot_pose.pose.position.z;
+
+            transform.transform.rotation.x = q.x();
+            transform.transform.rotation.y = q.y();
+            transform.transform.rotation.z = q.z();
+            transform.transform.rotation.w = q.w();
+
+            tf_broadcaster->sendTransform(transform);
+
+            path.header.stamp = robot_pose.header.stamp;
+            path.poses.push_back(robot_pose);
+            path_publisher->publish(path);
         }
         else {
             RCLCPP_ERROR(this->get_logger(), "Marker with ID %d is not found.", marker_id);
