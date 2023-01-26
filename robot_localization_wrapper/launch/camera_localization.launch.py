@@ -31,11 +31,22 @@ def generate_launch_description():
             'cam_exposure', default_value='0.0'
         ),
         DeclareLaunchArgument(
-            'cam_param_file', default_value='camera_params.json'
+            'pixel_resolution.x', default_value='1.0'
+        ),
+        DeclareLaunchArgument(
+            'pixel_resolution.y', default_value='1.0'
+        ),
+        DeclareLaunchArgument(
+            'parent_frame_id', default_value='map'
+        ),
+        DeclareLaunchArgument(
+            'child_frame_id', default_value='robot'
         ),
         Node(
             package='robot_localization_wrapper',
             executable='camera_localization_node',
+            output='screen',
+            emulate_tty=True,
             parameters=[{
                 'sample_period': LaunchConfiguration('sample_period'),
                 'dict_id': LaunchConfiguration('dict_id'),
@@ -45,7 +56,10 @@ def generate_launch_description():
                 'cam_height': LaunchConfiguration('cam_height'),
                 'cam_focus': LaunchConfiguration('cam_focus'),
                 'cam_exposure': LaunchConfiguration('cam_exposure'),
-                'cam_param_file': LaunchConfiguration('cam_param_file')
+                'pixel_resolution.x': LaunchConfiguration('pixel_resolution.x'),
+                'pixel_resolution.y': LaunchConfiguration('pixel_resolution.y'),
+                'parent_frame_id': LaunchConfiguration('parent_frame_id'),
+                'child_frame_id': LaunchConfiguration('child_frame_id')
             }]
         )
     ])

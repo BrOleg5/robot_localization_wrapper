@@ -5,6 +5,7 @@
 #include <memory>
 #include <chrono>
 #include <cstdlib>
+#include <map>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/parameter.hpp"
@@ -18,7 +19,6 @@
 #include "opencv2/videoio.hpp"
 
 #include "aruco_robot_localization/arucolocalization.hpp"
-#include "aruco_robot_localization/read_save_camera_parameters.hpp"
 
 using namespace std::chrono;
 

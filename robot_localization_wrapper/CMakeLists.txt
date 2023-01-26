@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.8)
 
 include("cmake/read_package_version.cmake")
+read_package_version_from_xml()
 
-read_package_version_from_xml() # macro from cmake/macros.cmake
-project(robot_localization_wrapper VERSION ${READ_PROJECT_VERSION} DESCRIPTION "Robot localization package")
+project(robot_localization_wrapper VERSION ${PACKAGE_VERSION} DESCRIPTION "Robot localization package")
+
+unset(PACKAGE_VERSION)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -62,35 +64,18 @@ target_link_libraries(camera_localization_node_bin camera_localization_node)
 
 
 
-add_library(frame_path_publisher src/FramePathPublisher.cpp)
+add_executable(initial_transform_broadcaster
+  src/initial_transform_broadcaster.cpp
+  src/InitialTransformBroadcaster.cpp
+  include/${PROJECT_NAME}/InitialTransformBroadcaster.hpp
+)
 
-set_target_properties(frame_path_publisher PROPERTIES
-                      VERSION ${PROJECT_VERSION}
-                      PUBLIC_HEADER "include/${PROJECT_NAME}/FramePathPublisher.hpp"
-                      DEBUG_POSTFIX d)
+target_include_directories(initial_transform_broadcaster PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}
+)
 
-target_include_directories(frame_path_publisher PUBLIC
-                           $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-                           $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR})
-
-target_link_libraries(frame_path_publisher arucolocalization)
-
-ament_target_dependencies(frame_path_publisher rclcpp geometry_msgs tf2 tf2_ros nav_msgs)
-
-
-add_executable(frame_path_publisher_bin src/frame_path_publisher.cpp)
-
-# source: https://forum.kde.org/viewtopic.php?f=74&t=153982
-if(MSVC AND ${MSVC_VERSION} GREATER_EQUAL 1915)
-  # You must acknowledge that you understand MSVC resolved a byte alignment issue in this compiler
-  # We get this due to using Eigen objects and allocating those objects with make_shared
-  target_compile_definitions(frame_path_publisher_bin PRIVATE _ENABLE_EXTENDED_ALIGNED_STORAGE)
-endif()
-
-set_target_properties(frame_path_publisher_bin PROPERTIES
-                      OUTPUT_NAME frame_path_publisher)
-
-target_link_libraries(frame_path_publisher_bin frame_path_publisher)
+ament_target_dependencies(initial_transform_broadcaster rclcpp geometry_msgs tf2 tf2_ros)
 
 
 if(BUILD_TESTING)
@@ -106,21 +91,22 @@ if(BUILD_TESTING)
 endif()
 
 install(TARGETS
-        camera_localization_node
-        frame_path_publisher
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin
-        PUBLIC_HEADER DESTINATION include/${PROJECT_NAME})
+  camera_localization_node
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+  PUBLIC_HEADER DESTINATION include/${PROJECT_NAME}
+)
 
 install(TARGETS
-        camera_localization_node_bin
-        frame_path_publisher_bin
-        DESTINATION lib/${PROJECT_NAME})
+  camera_localization_node_bin
+  initial_transform_broadcaster
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 install(DIRECTORY
-        launch
-        DESTINATION share/${PROJECT_NAME}/
+  launch
+  DESTINATION share/${PROJECT_NAME}/
 )
 
 ament_package()

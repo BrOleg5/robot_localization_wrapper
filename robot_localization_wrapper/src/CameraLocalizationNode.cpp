@@ -4,14 +4,14 @@ CameraLocalizationNode::CameraLocalizationNode(): Node("camera_loc") {
     declare_node_parameters();
 
     tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
-    transform.header.frame_id = "world";
-    transform.child_frame_id = "base_link";
+    transform.header.frame_id = this->get_parameter("parent_frame_id").get_parameter_value().get<std::string>();
+    transform.child_frame_id = this->get_parameter("child_frame_id").get_parameter_value().get<std::string>();
 
     std::string node_name = this->get_name();
     pose_publisher = this->create_publisher<geometry_msgs::msg::PoseStamped>("/" + node_name + "/pose", 10);
     path_publisher = this->create_publisher<nav_msgs::msg::Path>("/" + node_name + "/path", 10);
 
-    path.header.frame_id = "world";
+    path.header.frame_id = this->get_parameter("parent_frame_id").get_parameter_value().get<std::string>();
 
     int dictionary_id = static_cast<int>(this->get_parameter("dict_id").get_parameter_value().get<long long>());
     cv_system.setMarkerDictionary(dictionary_id);
@@ -19,14 +19,13 @@ CameraLocalizationNode::CameraLocalizationNode(): Node("camera_loc") {
 
     video_capture_init();
     cv::Point2f pixelResolution;
-    std::string cam_param_file = this->get_parameter("cam_param_file").get_parameter_value().get<std::string>();
-    RCLCPP_INFO(this->get_logger(), "File camera parameters: %s", cam_param_file);
-    if (!readCameraParameters(cam_param_file, pixelResolution)) {
-        RCLCPP_ERROR(this->get_logger(), "Read camera parameters error.");
-    }
+    std::map<std::string, double> pixel_resolution;
+    this->get_parameters("pixel_resolution", pixel_resolution);
+    pixelResolution.x = static_cast<float>(pixel_resolution["x"]);
+    pixelResolution.y = static_cast<float>(pixel_resolution["y"]);
     RCLCPP_INFO(this->get_logger(), "Pixel resolutions: x: %f, y = %f", pixelResolution.x, pixelResolution.y);
     // validate data
-    if((pixelResolution.x <= 0) || (pixelResolution.y <= 0)) {
+    if((pixelResolution.x < 0) || (pixelResolution.y < 0)) {
         RCLCPP_ERROR(this->get_logger(), "Get invalid camera parameters.");
     }
     transfer.pixelResolution = pixelResolution;
@@ -55,6 +54,7 @@ void CameraLocalizationNode::declare_node_parameters() {
                                 "DICT_7X7_100=13, DICT_7X7_250=14, DICT_7X7_1000=15, DICT_ARUCO_ORIGINAL = 16,"
                                 "DICT_APRILTAG_16h5=17, DICT_APRILTAG_25h9=18, DICT_APRILTAG_36h10=19, DICT_APRILTAG_36h11=20";
     this->declare_parameter<long long>("dict_id", 0, dict_id_desc);
+
     rcl_interfaces::msg::ParameterDescriptor marker_id_desc{};
     marker_id_desc.description = "Marker id.";
     this->declare_parameter<long long>("marker_id", 0, marker_id_desc);
@@ -62,22 +62,23 @@ void CameraLocalizationNode::declare_node_parameters() {
     rcl_interfaces::msg::ParameterDescriptor cam_id_desc{};
     cam_id_desc.description = "Camera id.";
     this->declare_parameter<long long>("cam_id", 0, cam_id_desc);
-    rcl_interfaces::msg::ParameterDescriptor cam_width_desc{};
-    cam_width_desc.description = "Width of camera frame in pixels.";
-    this->declare_parameter<long long>("cam_width", 1920, cam_width_desc);
-    rcl_interfaces::msg::ParameterDescriptor cam_height_desc{};
-    cam_height_desc.description = "Height of camera frame in pixels.";
-    this->declare_parameter<long long>("cam_height", 1080, cam_height_desc);
+
+    this->declare_parameters<long long>("camera_resolution", 
+        std::map<std::string, long long>({{"width", 1920}, {"height", 1080}}));
+
     rcl_interfaces::msg::ParameterDescriptor cam_focus_desc{};
     cam_focus_desc.description = "Camera focus.";
     cam_focus_desc.additional_constraints = "From 0 to 255 with step 5";
     this->declare_parameter<long long>("cam_focus", 0, cam_focus_desc);
+
     rcl_interfaces::msg::ParameterDescriptor cam_exposure_desc{};
     cam_exposure_desc.description = "Camera exposure.";
-    this->declare_parameter<double>("cam_exposure", -7.5, cam_exposure_desc);
-    rcl_interfaces::msg::ParameterDescriptor cam_param_file_desc{};
-    cam_param_file_desc.description = "JSON file with camera parameters.";
-    this->declare_parameter<std::string>("cam_param_file", "camera_params.json", cam_param_file_desc);
+    this->declare_parameter<double>("cam_exposure", 0.0, cam_exposure_desc);
+
+    this->declare_parameter<std::string>("parent_frame_id", "map");
+    this->declare_parameter<std::string>("child_frame_id", "robot");
+
+    this->declare_parameters<double>("pixel_resolution", std::map<std::string, double>({{"x", 1.0}, {"y", 1.0}}));
 }
 
 void CameraLocalizationNode::video_capture_init() {
@@ -88,8 +89,10 @@ void CameraLocalizationNode::video_capture_init() {
     #else
         video_capture.open(cam_id);
     #endif
-    int frame_width = static_cast<int>(this->get_parameter("cam_width").get_parameter_value().get<long long>());
-    int frame_height = static_cast<int>(this->get_parameter("cam_height").get_parameter_value().get<long long>());
+    std::map<std::string, long long> frame_resolution;
+    this->get_parameters("camera_resolution", frame_resolution);
+    int frame_width = static_cast<long long>(pixel_resolution["width"]);
+    int frame_height = static_cast<long long>(pixel_resolution["height"]);
     int cam_focus = static_cast<int>(this->get_parameter("cam_focus").get_parameter_value().get<long long>());
     cv_system.setFrameSize(frame_width, frame_height);
     video_capture.set(cv::CAP_PROP_FRAME_WIDTH, static_cast<double>(frame_width));
@@ -131,8 +134,8 @@ void CameraLocalizationNode::timer_callback() {
         if(cv_system.estimatePosition(&transfer, marker_id)) {
             geometry_msgs::msg::PoseStamped robot_pose;
             robot_pose.header.stamp = this->get_clock()->now();
-            robot_pose.pose.position.x = static_cast<double>(transfer.currGlobalCartesian.y * 1.84 / 1000.0);
-            robot_pose.pose.position.y = static_cast<double>(transfer.currGlobalCartesian.x * 1.84 / 1000.0);
+            robot_pose.pose.position.x = static_cast<double>(transfer.currGlobalCartesian.y * transfer.pixelResolution.x / 1000.0);
+            robot_pose.pose.position.y = static_cast<double>(transfer.currGlobalCartesian.x * transfer.pixelResolution.y / 1000.0);
             robot_pose.pose.position.z = 0.0;
 
             q.setRPY(0.0f, 0.0f, td::deg2rad(transfer.currAngle - 180.f));

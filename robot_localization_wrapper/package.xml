@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>robot_localization_wrapper</name>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
   <description>Robot localization package</description>
   <maintainer email="oleg.brylyov@mail.ru">BrOleg5</maintainer>
   <license>Apache License 2.0</license>
@@ -12,6 +12,9 @@
 
   <depend>rclcpp</depend>
   <depend>geometry_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>nav_msgs</depend>
   <depend>aruco_robot_localization</depend>
 
   <exec_depend>launch</exec_depend>
