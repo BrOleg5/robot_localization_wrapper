@@ -3,6 +3,7 @@ from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
+
 def generate_launch_description():
 
     return LaunchDescription([
@@ -13,7 +14,7 @@ def generate_launch_description():
             'child_frame_id', default_value='init_pose'
         ),
         DeclareLaunchArgument(
-            'topic_name', default_value='init_pose'
+            'topic_name', default_value='/pose'
         ),
         Node(
             package='robot_localization_wrapper',

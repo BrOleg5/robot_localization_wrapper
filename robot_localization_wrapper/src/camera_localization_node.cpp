@@ -1,6 +1,9 @@
+// Copyright 2022 BrOleg5
+
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
+
 #include "robot_localization_wrapper/CameraLocalizationNode.hpp"
 
 int main(int argc, char** argv) {
