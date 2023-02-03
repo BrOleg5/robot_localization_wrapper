@@ -3,6 +3,8 @@
 #ifndef ROBOT_LOCALIZATION_WRAPPER__INITIALTRANSFORMBROADCASTER_HPP_
 #define ROBOT_LOCALIZATION_WRAPPER__INITIALTRANSFORMBROADCASTER_HPP_
 
+#include <memory>
+
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/wait_for_message.hpp"
 

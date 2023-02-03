@@ -35,7 +35,6 @@ InitialTransformBroadcasterNode::InitialTransformBroadcasterNode():
                                          .get_parameter_value().get<std::string>();
         transform.child_frame_id = this->get_parameter("child_frame_id")
                                         .get_parameter_value().get<std::string>();
-        RCLCPP_INFO(this->get_logger(), "Parent ID: %s, child ID: %s", transform.header.frame_id, transform.child_frame_id);
 
         transform.transform.translation.x = pose_stamped.pose.position.x;
         transform.transform.translation.y = pose_stamped.pose.position.y;
